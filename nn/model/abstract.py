@@ -129,6 +129,15 @@ class Model(IModel):
 
         return self.__fit_history
 
+    def fit_forward(self, part_x: [ndarray, IDataFeeder]):
+        self.__placeholder_input.set_value(part_x)
+        return self.__ref_output.F()
+
+    def fit_backward(self, grad):
+        # do backward propagation from loss
+        self.__ref_output.G(grad)
+        return self.__placeholder_input.get_gradient()
+
     def fit_history(self) -> FitResultHelper:
         return self.__fit_history
 
