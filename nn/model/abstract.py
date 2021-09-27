@@ -17,6 +17,7 @@ from nn.model.model_history import FitResultHelper
 from nn.optimizer import IOpContainer, OpContainer, GDOptimizer
 from nn.value.placeholder import Placeholder
 from log import IPrinter
+import log
 
 
 class Model(IModel):
@@ -28,6 +29,7 @@ class Model(IModel):
         self.__loss: [ILoss] = None
         self.__optimizer: [IOptimizer] = None
         self.__fit_history: FitResultHelper = FitResultHelper()
+        self.__debug_logger: log.Logger(title_info='debug:')
 
     @abstractmethod
     def trainable_variables(self) -> Iterable[ITrainable]:

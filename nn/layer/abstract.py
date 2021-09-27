@@ -8,6 +8,7 @@ from nn.activation.interface import IActivation
 from nn.activation.linear import Linear
 from nn.interface import IOperator, ITrainable, ModelState
 from nn.layer.interface import ILazyInitialization
+import log
 
 
 class AbsLayer(IOperator, ILazyInitialization):

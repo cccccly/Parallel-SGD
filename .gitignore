@@ -11,5 +11,5 @@ tmp_log/
 /parallel_sgd/codec/toy_codec.py
 /parallel_sgd/codec/pdd.py
 demo*.py
-demo.py
 demo1.py
+demo.py
