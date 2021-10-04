@@ -1,3 +1,5 @@
+import collections
+
 import numpy as np
 
 from nn.activation.abstract import AbsActivation
@@ -8,21 +10,28 @@ class ReLU(AbsActivation):
 
     def __init__(self, op: IOperator = None):
         super().__init__(op)
-        self.__ref_input: [np.ndarray] = None
+        self.__ref_input = collections.deque()
 
     def output_shape(self) -> [list, tuple, None]:
         return self.op_child.output_shape()
 
     def do_forward(self, x, training=True):
-        self.__ref_input = x.copy()
-        self.__ref_input[self.__ref_input < 0] = 0
-        return self.__ref_input
+        # put x into the end of deque
+        self.__ref_input.append(x)
+        # use the end of deque
+        self.__ref_input[-1][self.__ref_input[-1] < 0] = 0
+        res = self.__ref_input[-1]
+        if not training:
+            return self.__ref_input.popleft()
+        return res
 
     def do_backward(self, x, grad):
-        return np.multiply(grad, self.__ref_input >= 0)
+        grad = np.multiply(grad, self.__ref_input[0] >= 0)
+        self.__ref_input.popleft()
+        return grad
 
     def clear_unused(self):
-        self.__ref_input = None
+        self.__ref_input.clear()
 
 
 class LeakReLU(AbsActivation):

@@ -20,7 +20,7 @@ from log import IPrinter
 import log
 
 
-class Model(IModel):
+class PartialModel(IModel):
 
     def __init__(self, input_shape: [Tuple[int]] = None):
         self.__placeholder_input = Placeholder(input_shape)
@@ -130,13 +130,9 @@ class Model(IModel):
 
         return self.__fit_history
 
-    def fit_forward(self, x: [ndarray, IDataFeeder]):
-        self.__placeholder_input.set_value(x)
+    def fit_forward(self, part_x: [ndarray, IDataFeeder]):
+        self.__placeholder_input.set_value(part_x)
         return self.__ref_output.F()
-
-    def fit_forward_predict(self, x: [ndarray, IDataFeeder]):
-        self.__placeholder_input.set_value(x)
-        return self.__ref_output.F(state=ModelState.Evaluating)
 
     def fit_backward(self, grad):
         # do backward propagation from loss
