@@ -1,5 +1,5 @@
 from typing import Sequence, Optional
-
+import collections
 import numpy as np
 import tensorflow as tf
 
@@ -20,7 +20,8 @@ class Conv2D(AbsLayer):
                  strides: Optional[Sequence[int]] = None,
                  padding: str = None,
                  activation: IActivation = None,
-                 inputs: IOperator = None):
+                 inputs: IOperator = None,
+                 max_batch_num: int = 1):
         """
             Currently support "VALID" convolve only.
         :param kernel: Kernel count
@@ -31,7 +32,7 @@ class Conv2D(AbsLayer):
         :param inputs: input operator. IOperator instance.
         """
         # Initialize super class
-        super().__init__(inputs, activation)
+        super().__init__(inputs, activation, max_batch_num)
         # make default strides
         if strides is None:
             self.__strides: Sequence[int] = (1, 1)
@@ -57,6 +58,9 @@ class Conv2D(AbsLayer):
         # make weights
         self.__kernel = Weights()
         self.__bias = Weights()
+        # weight queue
+        self.__kernel_queue = collections.deque([Weights() for i in range(self.max_batch_num)])
+        self.__bias_queue = collections.deque([Weights() for i in range(self.max_batch_num)])
         # 4th dimension of input
         self.__count_input: Optional[int] = None
         # output shape
@@ -66,8 +70,11 @@ class Conv2D(AbsLayer):
             self.__get_shape_output(inputs.output_shape())
 
     @property
-    def variables(self) -> tuple:
-        return self.__kernel, self.__bias
+    def variables(self) -> list:
+        res = []
+        for w, b in zip(self.__kernel_queue, self.__bias_queue):
+            res.append((w, b))
+        return res
 
     def __get_shape_output(self, input_shape: Sequence[int]):
         if self.__padding == 'VALID':
@@ -90,6 +97,10 @@ class Conv2D(AbsLayer):
         low = -high
         self.__kernel.set_value(np.random.uniform(low=low, high=high, size=shape_kernel))
         self.__bias.set_value(np.zeros(shape=self.__shape_output[1:]))
+        # set parameters queue (kernel & bias)
+        for i in range(self.max_batch_num):
+            self.__kernel_queue[i].set_value(self.__kernel.get_value())
+            self.__bias_queue[i].set_value(self.__bias.get_value())
 
     def do_forward_predict(self, x: np.ndarray):
         tf_kernel = tf.Variable(tf.constant(self.__kernel.get_value(), dtype=tf.float32))
@@ -101,7 +112,17 @@ class Conv2D(AbsLayer):
         return out + self.__bias.get_value()
 
     def do_forward_train(self, x):
-        return self.do_forward_predict(x)
+        tf_kernel = tf.Variable(tf.constant(self.__kernel_queue[0].get_value(), dtype=tf.float32))
+        # put the first kernel to the end of the queue
+        self.__kernel_queue.append(self.__kernel_queue.popleft())
+        # get input
+        tf_input = tf.Variable(tf.constant(x, dtype=tf.float32))
+        # get output, 60% of time consumed
+        tf_out = tf.nn.conv2d(tf_input, tf_kernel, self.__strides, self.__padding)
+        out = tf_out.numpy().astype('float64') + self.__bias.get_value()
+        # put the first bias to the end of the queue
+        self.__bias_queue.append(self.__bias_queue.popleft())
+        return out
 
     def backward_adjust(self, grad) -> None:
         # rearrange input
@@ -112,11 +133,13 @@ class Conv2D(AbsLayer):
         tf_conv = tf.nn.conv2d(tf_input, tf_grad, self.__strides, self.__back_prop_padding)
         tf_out = tf.transpose(tf_conv, perm=[1, 2, 0, 3])
         out = tf_out.numpy()
-        self.__kernel.adjust(out)
-        self.__bias.adjust(grad)
+        self.__kernel_queue[0].adjust(out)
+        self.__bias_queue[0].adjust(grad)
+        self.__kernel.set_value(self.__kernel_queue[0].get_value())
+        self.__bias.set_value(self.__bias_queue[0].get_value())
 
     def backward_propagate(self, grad):
-        tf_kernel = tf.constant(self.__kernel.get_value(), dtype=tf.float32)
+        tf_kernel = tf.constant(self.__kernel_queue[0].get_value(), dtype=tf.float32)
         tf_grad = tf.constant(grad, dtype=tf.float32)
         tf_out = tf.nn.conv2d_transpose(tf_grad, tf_kernel, self.input_ref.shape, self.__strides, self.__padding)
         grad = tf_out.numpy()

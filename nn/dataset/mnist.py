@@ -43,7 +43,7 @@ class MNIST(AbsDataset):
         ]
 
     def estimate_size(self) -> int:
-        return 62914560 #60MB
+        return 62914560  # 60MB
 
     def __load_core(self, kind='train'):
         """Load MNIST data from `path`"""

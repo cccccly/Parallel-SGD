@@ -6,7 +6,6 @@ from nn.interface import IOperator
 from nn.layer.abstract import AbsLayer
 from nn.activation.interface import IActivation
 from nn.value.trainable import Weights
-import copy
 
 
 class Dense(AbsLayer):
