@@ -29,9 +29,9 @@ class AbsLayer(IOperator, ILazyInitialization):
         self.__activation = activation if activation else Linear()
         self.__initialized = False
         self.__max_batch_num = max_batch_num
-        self.__forward_time = 0
-        self.__backward_time = 0
-        self.__val_forward_time = 0
+        self.__forward_time = []
+        self.__backward_time = []
+        self.__val_forward_time = []
 
     @property
     def max_batch_num(self):
@@ -135,12 +135,12 @@ class AbsLayer(IOperator, ILazyInitialization):
             output = self.__activation.do_forward(self.do_forward_predict(self.__ref_input[-1]), training=False)
             # pop last input because no backward pass in predicting progress
             self.__ref_input.popleft()
-            self.__val_forward_time += time.time() - begin
+            self.__val_forward_time.append(time.time() - begin)
             return output
         else:
             begin = time.time()
             output = self.__activation.do_forward(self.do_forward_train(self.__ref_input[-1]))
-            self.__forward_time += time.time() - begin
+            self.__forward_time.append(time.time() - begin)
             return output
 
     def G(self, grad: [float, ndarray]) -> None:
@@ -153,10 +153,10 @@ class AbsLayer(IOperator, ILazyInitialization):
         begin = time.time()
         # adjust variables with given gradients.
         gradient = self.__activation.do_backward(None, grad)
-        self.__backward_time += time.time() - begin
+        # adjust current layer.
+        self.backward_adjust(gradient)
+        self.__backward_time.append(time.time() - begin)
         # adjust previous layers.
         if self.__op_input:
             self.__op_input.G(self.backward_propagate(gradient))
-        # adjust current layer.
-        self.backward_adjust(gradient)
         self.__ref_input.popleft()

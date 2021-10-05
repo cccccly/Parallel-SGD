@@ -122,6 +122,22 @@ class DNN(Model):
         return fc5
 
 
+def lenet():
+    model = SequentialModel()
+    model.add(Reshape(shape=[-1, 28, 28, 1]))
+    model.add(Conv2D(kernel=6, kernel_size=[5, 5], strides=[1, 1], activation=nn.activation.ReLU()))
+    model.add(MaxPool(strides=[2, 2], size=(2, 2), padding='VALID'))
+    model.add(BatchNorm())
+    model.add(Conv2D(kernel=16, kernel_size=[5, 5], strides=[1, 1], activation=nn.activation.ReLU()))
+    model.add(MaxPool(strides=[2, 2], size=(2, 2), padding='VALID'))
+    model.add(BatchNorm())
+    model.add(Flatten())
+    model.add(Dense(activation=ReLU(), units=120))
+    model.add(Dense(activation=ReLU(), units=84))
+    model.add(Dense(activation=Softmax(), units=10))
+    return model
+
+
 class LeNet(Model):
     def __init__(self, input_shape: [Tuple[int]] = None):
         super().__init__(input_shape)
@@ -207,6 +223,50 @@ class Vgg16(Model):
         dropout = Dropout(inputs=flatten)
 
         fc1 = Dense(inputs=dropout, activation=Softmax(), units=10, max_batch_num=1)
+        for item in fc1.variables:
+            self.__var_list.extend(item)
+
+        return fc1
+
+
+# remaining some bug in this model
+class FastModel(Model):
+    def __init__(self, input_shape: [Tuple[int]] = None):
+        super().__init__(input_shape)
+        self.__var_list: List[ITrainable] = []
+
+    def trainable_variables(self) -> Iterable[ITrainable]:
+        return self.__var_list
+
+    def call(self, x: IOperator) -> IOperator:
+        self.__var_list: List[ITrainable] = []
+
+        reshape = Reshape(inputs=x, shape=[-1, 32, 32, 3])
+        # conv1
+        conv1 = Conv2D(inputs=reshape, kernel=32, kernel_size=[5, 5], strides=[1, 1], padding='SAME',
+                       activation=nn.activation.ReLU())
+        for item in conv1.variables:
+            self.__var_list.extend(item)
+        maxpool1 = MaxPool(inputs=conv1, strides=[2, 2], size=(3, 3), padding='SAME')
+
+        # conv2
+        conv2 = Conv2D(inputs=maxpool1, kernel=32, kernel_size=[5, 5], strides=[1, 1], padding='SAME',
+                       activation=nn.activation.ReLU())
+        for item in conv2.variables:
+            self.__var_list.extend(item)
+        maxpool2 = MaxPool(inputs=conv2, strides=[2, 2], size=(3, 3), padding='SAME')
+
+        # conv3
+        conv3 = Conv2D(inputs=maxpool2, kernel=32, kernel_size=[5, 5], strides=[1, 1], padding='SAME',
+                       activation=nn.activation.ReLU())
+        for item in conv3.variables:
+            self.__var_list.extend(item)
+        maxpool3 = MaxPool(inputs=conv3, strides=[2, 2], size=(3, 3), padding='SAME')
+
+        flatten = Flatten(inputs=maxpool3)
+
+        # fc1
+        fc1 = Dense(inputs=flatten, activation=Softmax(), units=10)
         for item in fc1.variables:
             self.__var_list.extend(item)
 

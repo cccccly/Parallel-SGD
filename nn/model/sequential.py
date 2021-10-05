@@ -1,5 +1,7 @@
 from typing import List, Tuple
 
+import numpy as np
+
 from nn import IOperator, AbsLayer, ITrainable
 from nn.model.abstract import Model
 
@@ -26,18 +28,25 @@ class SequentialModel(Model):
     def trainable_variables(self) -> Tuple[ITrainable]:
         var_list: List[ITrainable] = []
         for layer in self.__layers:
-            var_list.extend(layer.variables)
+            for item in layer.variables:
+                var_list.extend(item)
         return tuple(var_list)
 
     def summary(self):
-
         summary = "\n------------\t\tModel Summary\t\t------------\n"
         for nn in self.__layers:
             nn: AbsLayer
             summary += '\t{}\t\t\n'.format(nn)
-            summary += '\t\tInput:\t{};\n'.format(
-                [-1] + list(nn.input_ref.shape[1:]) if nn.input_ref is not None else "[Adjust]")
-            summary += '\t\tOutput:\t{};\n'.format(nn.output_shape() if nn.output_shape() else "[Adjust]")
+            # summary += '\t\tInput:\t{};\n'.format(
+            #     [-1] + list(nn.input_ref.shape[1:]) if nn.input_ref is not None else "[Adjust]")
+            # summary += '\t\tOutput:\t{};\n'.format(nn.output_shape() if nn.output_shape() else "[Adjust]")
+            forward_time = nn.forward_time
+            backward_time = nn.backward_time
+            val_forward_time = nn.val_forward_time
+            summary += '\t\tforward_time_per_batch: {:.4f}\n' \
+                       '\t\tbackward_time_per_batch:{:.4f}\n' \
+                       '\t\tval_time_per_batch:     {:.4f}\n'\
+                .format(np.mean(forward_time), np.mean(backward_time), np.mean(val_forward_time))
 
         if self.loss:
             summary += '\t------------\t\tAppendix\t\t------------\n'
