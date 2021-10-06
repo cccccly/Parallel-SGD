@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Iterable
 
 import numpy as np
 
@@ -25,12 +25,12 @@ class SequentialModel(Model):
             inputs = layer
         return inputs
 
-    def trainable_variables(self) -> Tuple[ITrainable]:
+    def trainable_variables(self) -> List[ITrainable]:
         var_list: List[ITrainable] = []
         for layer in self.__layers:
             for item in layer.variables:
                 var_list.extend(item)
-        return tuple(var_list)
+        return var_list
 
     def summary(self):
         summary = "\n------------\t\tModel Summary\t\t------------\n"
