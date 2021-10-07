@@ -4,6 +4,9 @@ import numpy as np
 
 from nn import IOperator, AbsLayer, ITrainable
 from nn.model.abstract import Model
+from nn.activation.relu import ReLU
+from nn.activation.tanh import Tanh
+from nn.layer import batchnorm, conv2d, dense, dropout, flatten, maxpool, reshape
 
 
 class SequentialModel(Model):
@@ -62,3 +65,32 @@ class SequentialModel(Model):
     def clear(self):
         for layer in self.__layers:
             layer.reset()
+
+    def set_layers_weight(self, weight_list):
+        for layer, weight_queue in zip(self.__layers, weight_list):
+            layer.set_weight_queue(weight_queue)
+
+    def get_layers_weight(self) -> list:
+        weight_list = []
+        for layer in self.__layers:
+            weight_list.append(layer.get_weight_queue())
+        return weight_list
+
+    def set_layers_input(self, input_list: list):
+        for layer, input_ref in zip(self.__layers, input_list):
+            layer.input_ref.append(input_ref[0])
+            if input_ref[1]:
+                layer.activation.set_ref_input(input_ref[1])
+
+    def get_layers_input(self) -> list:
+        input_list = []
+        for layer in self.__layers:
+            if isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
+                input_list.append((layer.input_ref[-1],
+                                   layer.activation.ref_input[-1] if (layer.activation == ReLU()
+                                                                      or layer.activation == Tanh()) else None))
+            elif isinstance(layer, batchnorm.BatchNorm):
+                input_list.append((layer.input_ref[-1],
+                                   layer.activation.ref_input[-1] if (layer.activation == ReLU()
+                                                                      or layer.activation == Tanh()) else None))
+        return input_list

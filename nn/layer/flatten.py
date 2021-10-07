@@ -34,6 +34,15 @@ class Flatten(AbsLayer):
     def backward_propagate(self, grad):
         return np.reshape(grad, (-1, *self.__shape_in))
 
+    def get_latest_weight(self) -> np.ndarray:
+        pass
+
+    def set_latest_weight(self, latest_weight):
+        pass
+
+    def weight_avg(self):
+        pass
+
     def output_shape(self) -> [list, tuple, None]:
         return self.__shape_out
 
@@ -49,4 +58,4 @@ if __name__ == '__main__':
     x = Variable(shape=(2, 5, 5, 1))
     y = Flatten(inputs=x)
     print(y.F().shape)
-    print(y.G(np.random.normal(size=(2,25))).shape)
+    print(y.G(np.random.normal(size=(2, 25))).shape)

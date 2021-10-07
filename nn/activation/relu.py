@@ -12,6 +12,13 @@ class ReLU(AbsActivation):
         super().__init__(op)
         self.__ref_input = collections.deque()
 
+    @property
+    def ref_input(self):
+        return self.__ref_input
+
+    def set_ref_input(self, ref_input):
+        self.__ref_input.append(ref_input)
+
     def output_shape(self) -> [list, tuple, None]:
         return self.op_child.output_shape()
 

@@ -29,6 +29,15 @@ class Reshape(AbsLayer):
     def backward_adjust(self, grad) -> None:
         pass
 
+    def get_latest_weight(self) -> np.ndarray:
+        pass
+
+    def set_latest_weight(self, latest_weight):
+        pass
+
+    def weight_avg(self):
+        pass
+
     def backward_propagate(self, grad):
         return np.reshape(grad, self.__shape_in)
 

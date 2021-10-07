@@ -112,38 +112,60 @@ class Conv2D(AbsLayer):
         return out + self.__bias.get_value()
 
     def do_forward_train(self, x):
-        tf_kernel = tf.Variable(tf.constant(self.__kernel_queue[0].get_value(), dtype=tf.float32))
-        # put the first kernel to the end of the queue
-        self.__kernel_queue.append(self.__kernel_queue.popleft())
+        tf_kernel = tf.Variable(tf.constant(self.__kernel_queue[-1].get_value(), dtype=tf.float32))
         # get input
         tf_input = tf.Variable(tf.constant(x, dtype=tf.float32))
         # get output, 60% of time consumed
         tf_out = tf.nn.conv2d(tf_input, tf_kernel, self.__strides, self.__padding)
-        out = tf_out.numpy().astype('float64') + self.__bias.get_value()
-        # put the first bias to the end of the queue
-        self.__bias_queue.append(self.__bias_queue.popleft())
+        out = tf_out.numpy().astype('float64') + self.__bias_queue[-1].get_value()
         return out
 
     def backward_adjust(self, grad) -> None:
         # rearrange input
-        tf_input = tf.transpose(tf.constant(self.input_ref, dtype=tf.float32), perm=[3, 1, 2, 0])  # magic number
+        tf_input = tf.transpose(tf.constant(self.input_ref[0], dtype=tf.float32), perm=[3, 1, 2, 0])  # magic number
         # rearrange gradient, 38% of time consumed here
         tf_grad = tf.transpose(tf.constant(grad, dtype=tf.float32), perm=[1, 2, 0, 3])  # magic number, dont change
         # get output
         tf_conv = tf.nn.conv2d(tf_input, tf_grad, self.__strides, self.__back_prop_padding)
         tf_out = tf.transpose(tf_conv, perm=[1, 2, 0, 3])
         out = tf_out.numpy()
-        self.__kernel_queue[0].adjust(out)
-        self.__bias_queue[0].adjust(grad)
-        self.__kernel.set_value(self.__kernel_queue[0].get_value())
-        self.__bias.set_value(self.__bias_queue[0].get_value())
+        self.__kernel_queue.append(self.__kernel_queue.popleft())
+        self.__kernel_queue[-1].adjust(out)
+        self.__bias_queue.append(self.__bias_queue.popleft())
+        self.__bias_queue[-1].adjust(grad)
+        self.__kernel.set_value(self.__kernel_queue[-1].get_value())
+        self.__bias.set_value(self.__bias_queue[-1].get_value())
 
     def backward_propagate(self, grad):
         tf_kernel = tf.constant(self.__kernel_queue[0].get_value(), dtype=tf.float32)
         tf_grad = tf.constant(grad, dtype=tf.float32)
-        tf_out = tf.nn.conv2d_transpose(tf_grad, tf_kernel, self.input_ref.shape, self.__strides, self.__padding)
+        tf_out = tf.nn.conv2d_transpose(tf_grad, tf_kernel, self.input_ref[0].shape, self.__strides, self.__padding)
         grad = tf_out.numpy()
         return grad.astype('float64')
+
+    def set_latest_weight(self, weight: list):
+        for i in range(self.max_batch_num):
+            self.__kernel_queue[i].set_value(weight[i][0])
+            self.__bias_queue[i].set_value(weight[i][1])
+
+    def get_weight_queue(self) -> list:
+        weight = []
+        for i in range(self.max_batch_num):
+            weight.append((self.__kernel_queue[i].get_value(), self.__bias_queue[i].get_value()))
+        return weight
+
+
+    def weight_avg(self):
+        kernel = []
+        bias = []
+        for i in range(self.max_batch_num):
+            kernel.append(self.__kernel_queue[i].get_value())
+            bias.append(self.__bias_queue[i].get_value())
+        kernel_avg = np.mean(kernel, axis=0)
+        bias_avg = np.mean(bias, axis=0)
+        for i in range(self.max_batch_num):
+            self.__kernel_queue[i].set_value(kernel_avg)
+            self.__bias_queue[i].set_value(bias_avg)
 
     def output_shape(self) -> [list, tuple, None]:
         return self.__shape_output

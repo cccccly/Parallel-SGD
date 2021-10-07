@@ -32,6 +32,15 @@ class Dropout(AbsLayer):
     def backward_propagate(self, grad):
         return np.multiply(grad, self.__ref_mask) * self.__scale
 
+    def get_latest_weight(self) -> np.ndarray:
+        pass
+
+    def set_latest_weight(self, latest_weight):
+        pass
+
+    def weight_avg(self):
+        pass
+
     def output_shape(self) -> [list, tuple, None]:
         return None
 

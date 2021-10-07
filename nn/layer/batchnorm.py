@@ -39,6 +39,15 @@ class BatchNorm(AbsLayer):
     def backward_propagate(self, grad):
         return grad / np.sqrt(self.__sigma + self.__eps)
 
+    def get_latest_weight(self) -> np.ndarray:
+        pass
+
+    def set_latest_weight(self, latest_weight):
+        pass
+
+    def weight_avg(self):
+        pass
+
     def __str__(self):
         return "<BatchNorm Layer>"
 

@@ -17,7 +17,8 @@ class AbsLayer(IOperator, ILazyInitialization):
         Used for lazy initialization.
     """
 
-    def __init__(self, inputs: IOperator = None, activation: IActivation = None, max_batch_num: int = 1):
+    def __init__(self, inputs: IOperator = None, activation: IActivation = None
+                 , max_batch_num: int = 1, rank: int = 0):
         """
             Abstract layer class
         :param inputs: input operator, IOperator instance
@@ -29,13 +30,19 @@ class AbsLayer(IOperator, ILazyInitialization):
         self.__activation = activation if activation else Linear()
         self.__initialized = False
         self.__max_batch_num = max_batch_num
+        self.__rank = rank
         self.__forward_time = []
         self.__backward_time = []
         self.__val_forward_time = []
+        self.__cnt = 0
 
     @property
     def max_batch_num(self):
         return self.__max_batch_num
+
+    @property
+    def rank(self):
+        return self.__rank
 
     @property
     def forward_time(self):
@@ -52,7 +59,11 @@ class AbsLayer(IOperator, ILazyInitialization):
 
     @property
     def input_ref(self):
-        return self.__ref_input[0]
+        return self.__ref_input
+
+    @property
+    def activation(self):
+        return self.__activation
 
     def set_input(self, inputs: IOperator):
         self.__op_input = inputs
@@ -111,6 +122,18 @@ class AbsLayer(IOperator, ILazyInitialization):
         """
         pass
 
+    @abstractmethod
+    def get_latest_weight(self) -> list:
+        pass
+
+    @abstractmethod
+    def set_latest_weight(self, weight_queue):
+        pass
+
+    @abstractmethod
+    def weight_avg(self):
+        pass
+
     def reset(self):
         self.__initialized = False
 
@@ -155,6 +178,9 @@ class AbsLayer(IOperator, ILazyInitialization):
         gradient = self.__activation.do_backward(None, grad)
         # adjust current layer.
         self.backward_adjust(gradient)
+        self.__cnt += 1
+        # if self.__cnt % 10 == 0:
+        #     self.weight_avg()
         self.__backward_time.append(time.time() - begin)
         # adjust previous layers.
         if self.__op_input:
