@@ -69,13 +69,13 @@ class AbsFlexibleBinaryNode(IBinaryNode):
         if self.op_right:
             self.op_right.G(grad_right)
 
-    def clear_unused(self):
+    def clear_ref_input(self):
         pass
 
     def __getstate__(self):
         self.__ref_right = 0
         self.__ref_left = 0
-        self.clear_unused()
+        self.clear_ref_input()
         return self.__dict__
 
 
@@ -126,10 +126,10 @@ class AbsFlexibleUnaryNode(IUnaryNode, IFlexNode):
         if self.__op_child:
             self.op_child.G(grad_back)
 
-    def clear_unused(self):
+    def clear_ref_input(self):
         pass
 
     def __getstate__(self):
         self.__ref_input = 0
-        self.clear_unused()
+        self.clear_ref_input()
         return self.__dict__

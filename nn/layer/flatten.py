@@ -18,14 +18,12 @@ class Flatten(AbsLayer):
         return ()
 
     def initialize_parameters(self, x) -> None:
-        pass
+        self.__shape_in = x.shape[1:]
 
     def do_forward_predict(self, x):
-        self.__shape_in = x.shape[1:]
         return np.reshape(x, (x.shape[0], -1))
 
     def do_forward_train(self, x):
-        self.__shape_in = x.shape[1:]
         return np.reshape(x, (x.shape[0], -1))
 
     def backward_adjust(self, grad) -> None:

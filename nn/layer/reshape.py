@@ -26,6 +26,9 @@ class Reshape(AbsLayer):
     def do_forward_train(self, x):
         return np.reshape(x, self.__shape_out)
 
+    def backward_propagate(self, grad):
+        return np.reshape(grad, self.__shape_in)
+
     def backward_adjust(self, grad) -> None:
         pass
 
@@ -37,9 +40,6 @@ class Reshape(AbsLayer):
 
     def weight_avg(self):
         pass
-
-    def backward_propagate(self, grad):
-        return np.reshape(grad, self.__shape_in)
 
     def output_shape(self) -> [list, tuple, None]:
         return self.__shape_out

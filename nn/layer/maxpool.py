@@ -24,14 +24,23 @@ class MaxPool(AbsLayer):
     def variables(self) -> tuple:
         return ()
 
+    @property
+    def mask(self):
+        return self.__mask
+
+    def set_mask(self, value):
+        self.__mask.append(value)
+
+    def clear_mask(self):
+        self.__mask.clear()
+
     def initialize_parameters(self, x) -> None:
-        pass
+        self.__in_shape = x.shape
 
     def do_forward_predict(self, x):
         left = tf.Variable(tf.constant(x, dtype=tf.float32))
         out = tf.nn.max_pool2d(left, self.__size, self.__strides, self.__padding)
         self.__out_shape = out.numpy().shape
-        self.__in_shape = x.shape
         return out.numpy()
 
     def do_forward_train(self, x):
@@ -40,7 +49,6 @@ class MaxPool(AbsLayer):
             out = tf.nn.max_pool2d(left, self.__size, self.__strides, self.__padding)
         self.__mask.append(tape.gradient(out, left))
         self.__out_shape = out.numpy().shape
-        self.__in_shape = x.shape
         return out.numpy()
 
     def backward_adjust(self, grad) -> None:

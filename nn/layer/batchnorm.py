@@ -22,6 +22,22 @@ class BatchNorm(AbsLayer):
     def variables(self) -> tuple:
         return ()
 
+    @property
+    def sigma(self):
+        return self.__sigma
+
+    @sigma.setter
+    def sigma(self, value):
+        self.__sigma = value
+
+    @property
+    def mu(self):
+        return self.__mu
+
+    @mu.setter
+    def mu(self, value):
+        self.__mu = value
+
     def initialize_parameters(self, x) -> None:
         self.__shape = x.shape
 

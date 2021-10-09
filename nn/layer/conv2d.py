@@ -143,17 +143,15 @@ class Conv2D(AbsLayer):
         grad = tf_out.numpy()
         return grad.astype('float64')
 
-    def set_latest_weight(self, weight: list):
-        for i in range(self.max_batch_num):
-            self.__kernel_queue[i].set_value(weight[i][0])
-            self.__bias_queue[i].set_value(weight[i][1])
+    def set_activation_ref_input(self, value):
+        self.activation.set_ref_input(value)
 
-    def get_weight_queue(self) -> list:
-        weight = []
-        for i in range(self.max_batch_num):
-            weight.append((self.__kernel_queue[i].get_value(), self.__bias_queue[i].get_value()))
-        return weight
+    def set_latest_weight(self, weight: tuple):
+        self.__kernel_queue[-1].set_value(weight[0])
+        self.__bias_queue[-1].set_value(weight[1])
 
+    def get_latest_weight(self) -> tuple:
+        return self.__kernel.get_value(), self.__bias.get_value()
 
     def weight_avg(self):
         kernel = []

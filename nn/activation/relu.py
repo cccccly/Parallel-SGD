@@ -19,6 +19,9 @@ class ReLU(AbsActivation):
     def set_ref_input(self, ref_input):
         self.__ref_input.append(ref_input)
 
+    def clear_ref_input(self):
+        self.__ref_input.clear()
+
     def output_shape(self) -> [list, tuple, None]:
         return self.op_child.output_shape()
 
@@ -37,8 +40,7 @@ class ReLU(AbsActivation):
         self.__ref_input.popleft()
         return grad
 
-    def clear_unused(self):
-        self.__ref_input.clear()
+
 
 
 class LeakReLU(AbsActivation):

@@ -61,6 +61,12 @@ class AbsLayer(IOperator, ILazyInitialization):
     def input_ref(self):
         return self.__ref_input
 
+    def set_input_ref(self, value):
+        self.__ref_input.append(value)
+
+    def clear_input_ref(self):
+        self.__ref_input.clear()
+
     @property
     def activation(self):
         return self.__activation
@@ -173,6 +179,8 @@ class AbsLayer(IOperator, ILazyInitialization):
                 input gradients. e.g. loss functions.
         :return: None, try get gradients from placeholder or variable.
         """
+        if not self.__initialized:
+            self.__forward_prepare(self.__ref_input[-1])
         begin = time.time()
         # adjust variables with given gradients.
         gradient = self.__activation.do_backward(None, grad)

@@ -1,5 +1,5 @@
 import numpy as np
-
+import collections
 from nn.activation.abstract import IActivation
 from nn.layer.abstract import AbsLayer
 
@@ -8,13 +8,23 @@ class Dropout(AbsLayer):
 
     def __init__(self, drop_out_rate: float = 0.5, activation: IActivation = None, inputs=None):
         super().__init__(inputs, activation)
-        self.__ref_mask = None
+        self.__mask = collections.deque()
         self.__probability = drop_out_rate
         self.__scale = 1 / (1 - drop_out_rate)
 
     @property
     def variables(self) -> tuple:
         return ()
+
+    @property
+    def mask(self):
+        return self.__mask
+
+    def set_mask(self, value):
+        self.__mask.append(value)
+
+    def clear_mask(self):
+        self.__mask.clear()
 
     def initialize_parameters(self, x) -> None:
         pass
@@ -23,14 +33,14 @@ class Dropout(AbsLayer):
         return x
 
     def do_forward_train(self, x):
-        self.__ref_mask = np.random.uniform(0, 1, size=x.shape) > self.__probability
-        return np.multiply(x, self.__ref_mask) * self.__scale
+        self.__mask.append(np.random.uniform(0, 1, size=x.shape) > self.__probability)
+        return np.multiply(x, self.__mask[-1]) * self.__scale
 
     def backward_adjust(self, grad) -> None:
         pass
 
     def backward_propagate(self, grad):
-        return np.multiply(grad, self.__ref_mask) * self.__scale
+        return np.multiply(grad, self.__mask.popleft()) * self.__scale
 
     def get_latest_weight(self) -> np.ndarray:
         pass

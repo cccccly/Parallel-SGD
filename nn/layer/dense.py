@@ -57,11 +57,15 @@ class Dense(AbsLayer):
         g_x = np.dot(grad, self.__w_queue[0].get_value().T)
         return g_x
 
-    def get_weight_queue(self) -> list:
-        pass
+    def set_activation_ref_input(self, value):
+        self.activation.set_ref_input(value)
 
-    def set_weight_queue(self, weight_queue):
-        pass
+    def set_latest_weight(self, weight: tuple):
+        self.__w_queue[-1].set_value(weight[0])
+        self.__b_queue[-1].set_value(weight[1])
+
+    def get_latest_weight(self) -> tuple:
+        return self.__w.get_value(), self.__b.get_value()
 
     def weight_avg(self):
         w = []

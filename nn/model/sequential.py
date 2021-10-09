@@ -67,30 +67,52 @@ class SequentialModel(Model):
             layer.reset()
 
     def set_layers_weight(self, weight_list):
-        for layer, weight_queue in zip(self.__layers, weight_list):
-            layer.set_weight_queue(weight_queue)
+        for layer, weight in zip(self.__layers, weight_list):
+            if isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
+                weight_list.append(layer.set_latest_weight(weight))
 
     def get_layers_weight(self) -> list:
         weight_list = []
         for layer in self.__layers:
-            weight_list.append(layer.get_weight_queue())
+            if isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
+                weight_list.append(layer.get_latest_weight())
         return weight_list
 
     def set_layers_input(self, input_list: list):
-        for layer, input_ref in zip(self.__layers, input_list):
-            layer.input_ref.append(input_ref[0])
-            if input_ref[1]:
-                layer.activation.set_ref_input(input_ref[1])
+        for layer, item in zip(self.__layers, input_list):
+            if isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
+                if isinstance(layer.activation, ReLU) or isinstance(layer.activation, Tanh):
+                    layer.set_activation_ref_input(item[1])
+            elif isinstance(layer, batchnorm.BatchNorm):
+                layer.sigma = item[2]
+                layer.mu = item[3]
+            elif isinstance(layer, dropout.Dropout) or isinstance(layer, maxpool.MaxPool):
+                layer.set_mask(item[1])
+            layer.set_input_ref(item[0])
+        return input_list
 
     def get_layers_input(self) -> list:
         input_list = []
         for layer in self.__layers:
             if isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
                 input_list.append((layer.input_ref[-1],
-                                   layer.activation.ref_input[-1] if (layer.activation == ReLU()
-                                                                      or layer.activation == Tanh()) else None))
+                                   layer.activation.ref_input[-1] if (isinstance(layer.activation, ReLU)
+                                                                      or isinstance(layer.activation, Tanh)) else None))
             elif isinstance(layer, batchnorm.BatchNorm):
-                input_list.append((layer.input_ref[-1],
-                                   layer.activation.ref_input[-1] if (layer.activation == ReLU()
-                                                                      or layer.activation == Tanh()) else None))
+                input_list.append((layer.input_ref[-1], layer.sigma, layer.mu))
+
+            elif isinstance(layer, dropout.Dropout) or isinstance(layer, maxpool.MaxPool):
+                input_list.append((layer.input_ref[-1], layer.mask[-1]))
+
+            else:
+                input_list.append((layer.input_ref[-1], None))
         return input_list
+
+    def clear_layers_input_ref(self):
+        for layer in self.__layers:
+            layer.clear_input_ref()
+            if isinstance(layer, dropout.Dropout) or isinstance(layer, maxpool.MaxPool):
+                layer.clear_mask()
+            elif isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
+                if isinstance(layer.activation, ReLU) or isinstance(layer.activation, Tanh):
+                    layer.activation.clear_ref_input()
