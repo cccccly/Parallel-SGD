@@ -39,7 +39,7 @@ class Dense(AbsLayer):
             self.__b_queue[i].set_value(self.__b.get_value())
 
     def do_forward_predict(self, x):
-        return np.dot(x, self.__w.get_value()) + self.__b.get_value()
+        return np.dot(x, self.__w_queue[-1].get_value()) + self.__b_queue[-1].get_value()
 
     def do_forward_train(self, x):
         return np.dot(x, self.__w_queue[-1-self.rank].get_value()) + self.__b_queue[-1-self.rank].get_value()

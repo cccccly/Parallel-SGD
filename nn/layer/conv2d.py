@@ -103,13 +103,13 @@ class Conv2D(AbsLayer):
             self.__bias_queue[i].set_value(self.__bias.get_value())
 
     def do_forward_predict(self, x: np.ndarray):
-        tf_kernel = tf.Variable(tf.constant(self.__kernel.get_value(), dtype=tf.float32))
+        tf_kernel = tf.Variable(tf.constant(self.__kernel_queue[-1].get_value(), dtype=tf.float32))
         # get input
         tf_input = tf.Variable(tf.constant(x, dtype=tf.float32))
         # get output, 60% of time consumed
         tf_out = tf.nn.conv2d(tf_input, tf_kernel, self.__strides, self.__padding)
         out = tf_out.numpy().astype('float64')
-        return out + self.__bias.get_value()
+        return out + self.__bias_queue[-1].get_value()
 
     def do_forward_train(self, x):
         tf_kernel = tf.Variable(tf.constant(self.__kernel_queue[-1].get_value(), dtype=tf.float32))
