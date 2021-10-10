@@ -69,7 +69,7 @@ class SequentialModel(Model):
     def set_layers_weight(self, weight_list):
         for layer, weight in zip(self.__layers, weight_list):
             if isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
-                weight_list.append(layer.set_latest_weight(weight))
+                layer.set_latest_weight(weight)
 
     def get_layers_weight(self) -> list:
         weight_list = []
