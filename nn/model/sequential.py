@@ -84,8 +84,8 @@ class SequentialModel(Model):
                 if isinstance(layer.activation, ReLU) or isinstance(layer.activation, Tanh):
                     layer.set_activation_ref_input(item[1])
             elif isinstance(layer, batchnorm.BatchNorm):
-                layer.sigma = item[2]
-                layer.mu = item[3]
+                layer.sigma = item[1]
+                layer.mu = item[2]
             elif isinstance(layer, dropout.Dropout) or isinstance(layer, maxpool.MaxPool):
                 layer.set_mask(item[1])
             layer.set_input_ref(item[0])
