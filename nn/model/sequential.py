@@ -118,3 +118,12 @@ class SequentialModel(Model):
             elif isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
                 if isinstance(layer.activation, ReLU) or isinstance(layer.activation, Tanh):
                     layer.activation.clear_ref_input()
+
+    def popleft_layers_input_ref(self):
+        for layer in self.__layers:
+            layer.popleft_input_ref()
+            if isinstance(layer, dropout.Dropout) or isinstance(layer, maxpool.MaxPool):
+                layer.popleft_mask()
+            elif isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
+                if isinstance(layer.activation, ReLU) or isinstance(layer.activation, Tanh):
+                    layer.activation.popleft_ref_input()

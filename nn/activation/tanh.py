@@ -20,6 +20,9 @@ class Tanh(AbsActivation):
     def clear_ref_input(self):
         self.__ref_input.clear()
 
+    def popleft_ref_input(self):
+        self.__ref_input.popleft()
+
     def output_shape(self) -> [list, tuple, None]:
         return self.op_child.output_shape()
 

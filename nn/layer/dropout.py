@@ -26,6 +26,9 @@ class Dropout(AbsLayer):
     def clear_mask(self):
         self.__mask.clear()
 
+    def popleft_mask(self):
+        self.__mask.popleft()
+
     def initialize_parameters(self, x) -> None:
         pass
 

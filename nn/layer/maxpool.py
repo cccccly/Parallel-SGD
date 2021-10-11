@@ -34,6 +34,9 @@ class MaxPool(AbsLayer):
     def clear_mask(self):
         self.__mask.clear()
 
+    def popleft_mask(self):
+        self.__mask.popleft()
+
     def initialize_parameters(self, x) -> None:
         self.__in_shape = x.shape
 

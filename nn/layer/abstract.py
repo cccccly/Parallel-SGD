@@ -67,6 +67,9 @@ class AbsLayer(IOperator, ILazyInitialization):
     def clear_input_ref(self):
         self.__ref_input.clear()
 
+    def popleft_input_ref(self):
+        self.__ref_input.popleft()
+
     @property
     def activation(self):
         return self.__activation
