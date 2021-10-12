@@ -81,16 +81,20 @@ class SequentialModel(Model):
         return weight_list
 
     def set_layers_input(self, input_list: list):
-        for layer, item in zip(self.__layers, input_list):
+        cnt = 0
+        for layer in self.__layers:
             if isinstance(layer, conv2d.Conv2D) or isinstance(layer, dense.Dense):
+                layer.set_input_ref(input_list[cnt][0])
                 if isinstance(layer.activation, ReLU) or isinstance(layer.activation, Tanh):
-                    layer.set_activation_ref_input(item[1])
+                    layer.set_activation_ref_input(input_list[cnt][1])
+                cnt += 1
             elif isinstance(layer, batchnorm.BatchNorm):
-                layer.sigma = item[1]
-                layer.mu = item[2]
+                layer.sigma = input_list[cnt][0]
+                layer.mu = input_list[cnt][1]
+                cnt += 1
             elif isinstance(layer, dropout.Dropout) or isinstance(layer, maxpool.MaxPool):
-                layer.set_mask(item[1])
-            layer.set_input_ref(item[0])
+                layer.set_mask(input_list[cnt][0])
+                cnt += 1
         return input_list
 
     def get_layers_input(self) -> list:
@@ -101,13 +105,10 @@ class SequentialModel(Model):
                                    layer.activation.ref_input[-1] if (isinstance(layer.activation, ReLU)
                                                                       or isinstance(layer.activation, Tanh)) else None))
             elif isinstance(layer, batchnorm.BatchNorm):
-                input_list.append((layer.input_ref[-1], layer.sigma, layer.mu))
+                input_list.append((layer.sigma, layer.mu))
 
             elif isinstance(layer, dropout.Dropout) or isinstance(layer, maxpool.MaxPool):
-                input_list.append((layer.input_ref[-1], layer.mask[-1]))
-
-            else:
-                input_list.append((layer.input_ref[-1], None))
+                input_list.append((layer.mask[-1], None))
         return input_list
 
     def clear_layers_input_ref(self):

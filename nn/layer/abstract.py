@@ -196,4 +196,5 @@ class AbsLayer(IOperator, ILazyInitialization):
         # adjust previous layers.
         if self.__op_input:
             self.__op_input.G(self.backward_propagate(gradient))
-        self.__ref_input.popleft()
+        if len(self.__ref_input):
+            self.__ref_input.popleft()
