@@ -189,12 +189,14 @@ class AbsLayer(IOperator, ILazyInitialization):
         gradient = self.__activation.do_backward(None, grad)
         # adjust current layer.
         self.backward_adjust(gradient)
+        # caculate the next layer grad
+        grad = self.backward_propagate(gradient)
         self.__cnt += 1
         # if self.__cnt % 10 == 0:
         #     self.weight_avg()
         self.__backward_time.append(time.time() - begin)
         # adjust previous layers.
         if self.__op_input:
-            self.__op_input.G(self.backward_propagate(gradient))
+            self.__op_input.G(grad)
         if len(self.__ref_input):
             self.__ref_input.popleft()
